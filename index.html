@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Memory Games Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #000000;
+            margin-bottom: 30px;
+            font-size: 32px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            color: #000000;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .game-card {
+            padding: 30px;
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .game-card:hover {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .game-card h3 {
+            font-size: 20px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .game-card p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .game-card:hover p {
+            opacity: 1;
+        }
+
+        .setup-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .setup-section label {
+            font-size: 18px;
+            font-weight: 400;
+            color: #000000;
+            letter-spacing: 1px;
+        }
+
+        .option-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .option-btn {
+            padding: 15px 25px;
+            font-size: 16px;
+            background-color: #ffffff;
+            color: #000000;
+            border: 2px solid #000000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 400;
+            letter-spacing: 1px;
+            min-width: 80px;
+            touch-action: manipulation;
+        }
+
+        .option-btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .option-btn.selected {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            background-color: #000000;
+            color: #ffffff;
+            border: 1px solid #000000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 400;
+            letter-spacing: 1px;
+            touch-action: manipulation;
+        }
+
+        button:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .game-info {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            color: #000000;
+            font-size: 16px;
+            font-weight: 400;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-board {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .item {
+            background-color: #000000;
+            border: 1px solid #000000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            transition: all 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .item:hover {
+            opacity: 0.8;
+        }
+
+        .item:active {
+            transform: scale(0.95);
+        }
+
+        /* Prevent context menu on long press */
+        body {
+            -webkit-touch-callout: none;
+        }
+
+        .item.highlight {
+            background-color: #ffffff;
+            border: 2px solid #000000;
+            transform: scale(1.1);
+        }
+
+        .item.correct {
+            background-color: #f5f5f5;
+            border: 1px solid #cccccc;
+            opacity: 0.6;
+        }
+
+        .item.wrong {
+            background-color: #666;
+            border: 2px solid #333;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 400;
+            color: #000000;
+            text-align: center;
+            min-height: 30px;
+        }
+
+        .instruction {
+            font-size: 16px;
+            color: #000000;
+            text-align: center;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #000000;
+        }
+
+        .back-btn:hover {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            /* Reduce padding on pathfinder screen for more space */
+            #pathfinderGame.screen {
+                padding: 5px;
+            }
+
+            #pathfinderBoard {
+                margin: 10px 0 !important;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .game-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .game-card {
+                padding: 20px;
+                touch-action: manipulation;
+            }
+
+            .game-card h3 {
+                font-size: 18px;
+            }
+
+            .game-card p {
+                font-size: 13px;
+            }
+
+            /* Remove hover effects on mobile */
+            .game-card:hover {
+                background-color: #ffffff;
+                color: #000000;
+            }
+
+            .game-card:active {
+                background-color: #000000;
+                color: #ffffff;
+            }
+
+            .item:hover {
+                opacity: 1;
+            }
+
+            .option-group {
+                gap: 10px;
+            }
+
+            .option-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                min-width: 60px;
+            }
+
+            button {
+                padding: 10px 25px;
+                font-size: 14px;
+            }
+
+            .back-btn {
+                top: 10px;
+                left: 10px;
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+
+            .game-info {
+                gap: 20px;
+                font-size: 14px;
+            }
+
+            .item {
+                font-size: 30px;
+            }
+
+            .instruction {
+                font-size: 14px;
+                padding: 0 10px;
+            }
+
+            .message {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 20px;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            .game-card {
+                padding: 15px;
+            }
+
+            .option-btn {
+                padding: 10px 15px;
+                font-size: 13px;
+                min-width: 50px;
+            }
+
+            .item {
+                font-size: 25px;
+            }
+
+            /* Adjust game boards for mobile */
+            .game-board {
+                gap: 8px;
+            }
+
+            #spotlightBoard .item,
+            #clickorderBoard .item,
+            #sequenceBoard .item,
+            #speedmatchBoard .item,
+            #pathfinderBoard .item {
+                width: 60px !important;
+                height: 60px !important;
+                font-size: 30px !important;
+            }
+
+            /* Sequence board specific - 2x2 grid */
+            #sequenceBoard {
+                grid-template-columns: repeat(2, 90px) !important;
+            }
+
+            #sequenceBoard .item {
+                width: 90px !important;
+                height: 90px !important;
+                font-size: 50px !important;
+            }
+        }
+
+        /* Portrait orientation - mobile */
+        @media (max-width: 768px) and (orientation: portrait) {
+            body {
+                padding: 10px;
+            }
+
+            h2 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .game-info {
+                gap: 20px;
+                font-size: 14px;
+            }
+
+            .instruction {
+                font-size: 14px;
+            }
+
+            /* Spotlight - adjust grid for portrait */
+            #spotlightBoard.game-board {
+                gap: 8px;
+            }
+
+            #spotlightBoard .item {
+                width: 65px !important;
+                height: 65px !important;
+                font-size: 32px !important;
+            }
+
+            /* Click Order - adjust based on grid size */
+            #clickorderBoard .item {
+                width: 70px !important;
+                height: 70px !important;
+                font-size: 35px !important;
+            }
+
+            /* Sequence - keep 2x2 */
+            #sequenceBoard {
+                grid-template-columns: repeat(2, 100px) !important;
+            }
+
+            #sequenceBoard .item {
+                width: 100px !important;
+                height: 100px !important;
+                font-size: 55px !important;
+            }
+
+            /* Speed Match - 5 columns portrait */
+            #speedmatchBoard {
+                grid-template-columns: repeat(5, 60px) !important;
+            }
+
+            #speedmatchBoard .item {
+                width: 60px !important;
+                height: 60px !important;
+                font-size: 30px !important;
+            }
+
+            /* Path Finder - 4 columns, responsive rows (4x4, 4x5, 4x6) */
+            #pathfinderBoard {
+                gap: 8px;
+                max-width: 100%;
+            }
+
+            #pathfinderBoard .item {
+                aspect-ratio: 1;
+                font-size: 2rem;
+            }
+
+            button {
+                padding: 10px 25px;
+                font-size: 14px;
+            }
+
+            .message {
+                font-size: 16px;
+                margin-top: 15px;
+            }
+        }
+
+        /* Landscape orientation - mobile */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+                overflow-y: auto;
+            }
+
+            h2 {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .game-info {
+                margin-bottom: 10px;
+                font-size: 12px;
+                gap: 15px;
+            }
+
+            .instruction {
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+
+            .game-board {
+                gap: 5px;
+                margin: 10px 0;
+            }
+
+            /* Spotlight - wider layout */
+            #spotlightBoard .item {
+                width: 50px !important;
+                height: 50px !important;
+                font-size: 25px !important;
+            }
+
+            /* Click Order - spread horizontally */
+            #clickorderBoard .item {
+                width: 55px !important;
+                height: 55px !important;
+                font-size: 28px !important;
+            }
+
+            /* Sequence - smaller but still 2x2 */
+            #sequenceBoard {
+                grid-template-columns: repeat(2, 80px) !important;
+            }
+
+            #sequenceBoard .item {
+                width: 80px !important;
+                height: 80px !important;
+                font-size: 45px !important;
+            }
+
+            /* Speed Match - 10 columns landscape */
+            #speedmatchBoard {
+                grid-template-columns: repeat(10, 45px) !important;
+            }
+
+            #speedmatchBoard .item {
+                width: 45px !important;
+                height: 45px !important;
+                font-size: 22px !important;
+            }
+
+            /* Path Finder - 4 columns landscape */
+            #pathfinderBoard {
+                gap: 6px;
+            }
+
+            #pathfinderBoard .item {
+                aspect-ratio: 1;
+                font-size: 1.5rem;
+            }
+
+            button {
+                padding: 6px 15px;
+                font-size: 12px;
+                margin-top: 10px;
+            }
+
+            .message {
+                margin-top: 10px;
+                font-size: 14px;
+            }
+
+            .back-btn {
+                top: 5px;
+                left: 5px;
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+        }
+
+        /* Very small portrait phones */
+        @media (max-width: 375px) and (orientation: portrait) {
+            #spotlightBoard .item {
+                width: 55px !important;
+                height: 55px !important;
+                font-size: 28px !important;
+            }
+
+            #clickorderBoard .item {
+                width: 60px !important;
+                height: 60px !important;
+            }
+
+            #speedmatchBoard {
+                grid-template-columns: repeat(4, 55px) !important;
+            }
+
+            #speedmatchBoard .item {
+                width: 55px !important;
+                height: 55px !important;
+                font-size: 28px !important;
+            }
+
+            #pathfinderBoard {
+                gap: 7px;
+            }
+
+            #pathfinderBoard .item {
+                aspect-ratio: 1;
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Tablet landscape */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            #sequenceBoard {
+                grid-template-columns: repeat(2, 120px) !important;
+            }
+
+            #sequenceBoard .item {
+                width: 120px !important;
+                height: 120px !important;
+                font-size: 60px !important;
+            }
+
+            #speedmatchBoard {
+                grid-template-columns: repeat(10, 60px) !important;
+            }
+        }
+
+        /* Safe Area for iPhone X and newer */
+        @supports (padding: env(safe-area-inset-top)) {
+            body {
+                padding-top: max(20px, env(safe-area-inset-top));
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+                padding-left: max(20px, env(safe-area-inset-left));
+                padding-right: max(20px, env(safe-area-inset-right));
+            }
+
+            @media (max-height: 600px) and (orientation: landscape) {
+                body {
+                    padding-top: max(5px, env(safe-area-inset-top));
+                    padding-bottom: max(5px, env(safe-area-inset-bottom));
+                }
+            }
+        }
+
+        /* iOS-specific fixes for mobile */
+        @media (max-width: 768px) {
+            body {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                height: 100vh;
+                height: -webkit-fill-available;
+            }
+
+            .screen {
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-btn" id="backBtn" style="display: none;" onclick="goBack()">← BACK</button>
+
+    <!-- Game Selection Screen -->
+    <div class="screen active" id="gameSelection">
+        <h1>MEMORY GAMES</h1>
+        <div class="game-grid">
+            <div class="game-card" onclick="selectGame('spotlight')">
+                <h3>SPOTLIGHT</h3>
+                <p>Remember where items are located</p>
+            </div>
+            <div class="game-card" onclick="selectGame('clickorder')">
+                <h3>CLICK ORDER</h3>
+                <p>Remember the sequence order</p>
+            </div>
+            <div class="game-card" onclick="selectGame('sequence')">
+                <h3>SEQUENCE</h3>
+                <p>Simon Says style pattern game</p>
+            </div>
+            <div class="game-card" onclick="selectGame('speedmatch')">
+                <h3>SPEED MATCH</h3>
+                <p>Match cards against the clock</p>
+            </div>
+            <div class="game-card" onclick="selectGame('pathfinder')">
+                <h3>PATH FINDER</h3>
+                <p>Find the safe path from princess to castle</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Screen -->
+    <div class="screen" id="setupScreen">
+        <h1 id="setupTitle">GAME SETUP</h1>
+        <div id="setupOptions"></div>
+        <button onclick="startSelectedGame()">START GAME</button>
+    </div>
+
+    <!-- Spotlight Game -->
+    <div class="screen" id="spotlightGame">
+        <h2>SPOTLIGHT</h2>
+        <div class="game-info">
+            <div>Score: <span id="spotlightScore">0</span></div>
+            <div>Round: <span id="spotlightRound">1</span></div>
+        </div>
+        <div class="instruction" id="spotlightInstruction">Get ready...</div>
+        <div class="game-board" id="spotlightBoard"></div>
+        <div class="message" id="spotlightMessage"></div>
+        <button onclick="resetCurrentGame()">NEW GAME</button>
+    </div>
+
+    <!-- Click Order Game -->
+    <div class="screen" id="clickorderGame">
+        <h2>CLICK ORDER</h2>
+        <div class="game-info">
+            <div>Level: <span id="clickorderLevel">1</span></div>
+            <div>Score: <span id="clickorderScore">0</span></div>
+        </div>
+        <div class="instruction" id="clickorderInstruction">Watch the sequence...</div>
+        <div class="game-board" id="clickorderBoard"></div>
+        <div class="message" id="clickorderMessage"></div>
+        <button onclick="resetCurrentGame()">NEW GAME</button>
+    </div>
+
+    <!-- Sequence Game -->
+    <div class="screen" id="sequenceGame">
+        <h2>SEQUENCE</h2>
+        <div class="game-info">
+            <div>Level: <span id="sequenceLevel">1</span></div>
+            <div>Score: <span id="sequenceScore">0</span></div>
+        </div>
+        <div class="instruction" id="sequenceInstruction">Watch the pattern...</div>
+        <div class="game-board" id="sequenceBoard"></div>
+        <div class="message" id="sequenceMessage"></div>
+        <button onclick="resetCurrentGame()">NEW GAME</button>
+    </div>
+
+    <!-- Speed Match Game -->
+    <div class="screen" id="speedmatchGame">
+        <h2>SPEED MATCH</h2>
+        <div class="game-info">
+            <div>Time: <span id="speedmatchTimer">60</span>s</div>
+            <div>Matches: <span id="speedmatchMatches">0</span>/10</div>
+        </div>
+        <div class="game-board" id="speedmatchBoard"></div>
+        <div class="message" id="speedmatchMessage"></div>
+        <button onclick="resetCurrentGame()">NEW GAME</button>
+    </div>
+
+    <!-- Path Finder Game -->
+    <div class="screen" id="pathfinderGame">
+        <h2>PATH FINDER</h2>
+        <div class="game-info">
+            <div>Level: <span id="pathfinderLevel">1</span></div>
+            <div>Lives: <span id="pathfinderLives">3</span></div>
+        </div>
+        <div class="instruction" id="pathfinderInstruction">Watch the path...</div>
+        <div class="game-board" id="pathfinderBoard"></div>
+        <div class="message" id="pathfinderMessage"></div>
+        <button onclick="resetCurrentGame()">NEW GAME</button>
+    </div>
+
+    <script>
+        // Sound System
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Resume audio context on first user interaction (required for iOS)
+        let audioContextResumed = false;
+
+        function resumeAudioContext() {
+            if (!audioContextResumed && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    audioContextResumed = true;
+                });
+            }
+        }
+
+        // Add event listeners to resume audio on any user interaction
+        document.addEventListener('touchstart', resumeAudioContext, { once: true });
+        document.addEventListener('touchend', resumeAudioContext, { once: true });
+        document.addEventListener('click', resumeAudioContext, { once: true });
+
+        function playSound(type) {
+            // Ensure audio context is running
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            const now = audioContext.currentTime;
+
+            switch(type) {
+                case 'flip':
+                    oscillator.frequency.setValueAtTime(800, now);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.1);
+                    break;
+                case 'match':
+                    oscillator.frequency.setValueAtTime(523, now);
+                    oscillator.frequency.setValueAtTime(659, now + 0.1);
+                    oscillator.frequency.setValueAtTime(784, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.3);
+                    break;
+                case 'nomatch':
+                    oscillator.frequency.setValueAtTime(400, now);
+                    oscillator.frequency.setValueAtTime(300, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.2);
+                    break;
+                case 'win':
+                    const notes = [523, 659, 784, 1047];
+                    notes.forEach((freq, i) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.frequency.setValueAtTime(freq, now + i * 0.15);
+                        gain.gain.setValueAtTime(0.3, now + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.3);
+                        osc.start(now + i * 0.15);
+                        osc.stop(now + i * 0.15 + 0.3);
+                    });
+                    return;
+                case 'click':
+                    oscillator.frequency.setValueAtTime(600, now);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.05);
+                    break;
+            }
+        }
+
+        // Global state
+        let currentGame = '';
+        let gameSettings = {};
+        let isInitializing = false;
+        let activeTimeouts = [];
+        const emojis = ['🐶', '🐱', '🐼', '🦁', '🐘', '🦊', '🐸', '🐰', '🦄', '🐵', '🐯', '🐨', '🐮', '🐷', '🐻', '🐹', '🐺', '🦝', '🦒', '🦘', '🐔', '🦆', '🦅', '🦉', '🐢', '🐍', '🦎', '🐊', '🐙', '🦀'];
+
+        // Navigation
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            document.getElementById('backBtn').style.display = screenId === 'gameSelection' ? 'none' : 'block';
+        }
+
+        function cleanupGame() {
+            // Clear all active timeouts
+            activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+            activeTimeouts = [];
+
+            // Stop speed match timer
+            if (speedmatchState.timerInterval) {
+                clearInterval(speedmatchState.timerInterval);
+                speedmatchState.timerInterval = null;
+            }
+
+            // Remove all click handlers
+            document.querySelectorAll('.item').forEach(el => {
+                el.onclick = null;
+            });
+
+            // Reset all game states
+            spotlightState = {};
+            clickorderState = {};
+            sequenceState = {};
+            speedmatchState = {};
+            pathfinderState = {};
+        }
+
+        function goBack() {
+            playSound('click');
+            cleanupGame();
+
+            if (['spotlightGame', 'clickorderGame', 'sequenceGame', 'speedmatchGame', 'pathfinderGame'].includes(document.querySelector('.screen.active').id)) {
+                showScreen('setupScreen');
+            } else if (document.querySelector('.screen.active').id === 'setupScreen') {
+                showScreen('gameSelection');
+            }
+        }
+
+        function selectGame(game) {
+            playSound('click');
+            currentGame = game;
+            showSetupScreen(game);
+        }
+
+        function showSetupScreen(game) {
+            const setupOptions = document.getElementById('setupOptions');
+            const setupTitle = document.getElementById('setupTitle');
+            setupOptions.innerHTML = '';
+
+            switch(game) {
+                case 'spotlight':
+                    setupTitle.textContent = 'SPOTLIGHT SETUP';
+                    setupOptions.innerHTML = `
+                        <div class="setup-section">
+                            <label>GRID SIZE</label>
+                            <div class="option-group">
+                                <button class="option-btn selected" data-grid="3">3×3</button>
+                                <button class="option-btn" data-grid="4">4×4</button>
+                                <button class="option-btn" data-grid="5">5×5</button>
+                            </div>
+                        </div>
+                        <div class="setup-section">
+                            <label>VIEWING TIME</label>
+                            <div class="option-group">
+                                <button class="option-btn" data-time="3">3s</button>
+                                <button class="option-btn selected" data-time="4">4s</button>
+                                <button class="option-btn" data-time="5">5s</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'clickorder':
+                    setupTitle.textContent = 'CLICK ORDER SETUP';
+                    setupOptions.innerHTML = `
+                        <div class="setup-section">
+                            <label>DIFFICULTY</label>
+                            <div class="option-group">
+                                <button class="option-btn selected" data-difficulty="easy">EASY</button>
+                                <button class="option-btn" data-difficulty="medium">MEDIUM</button>
+                                <button class="option-btn" data-difficulty="hard">HARD</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'sequence':
+                    setupTitle.textContent = 'SEQUENCE SETUP';
+                    setupOptions.innerHTML = `
+                        <div class="setup-section">
+                            <label>DIFFICULTY</label>
+                            <div class="option-group">
+                                <button class="option-btn selected" data-difficulty="easy">EASY</button>
+                                <button class="option-btn" data-difficulty="medium">MEDIUM</button>
+                                <button class="option-btn" data-difficulty="hard">HARD</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'speedmatch':
+                    setupTitle.textContent = 'SPEED MATCH SETUP';
+                    setupOptions.innerHTML = `
+                        <div class="setup-section">
+                            <label>TIME LIMIT</label>
+                            <div class="option-group">
+                                <button class="option-btn" data-time="30">30s</button>
+                                <button class="option-btn selected" data-time="60">60s</button>
+                                <button class="option-btn" data-time="90">90s</button>
+                                <button class="option-btn" data-time="120">120s</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'pathfinder':
+                    setupTitle.textContent = 'PATH FINDER SETUP';
+                    setupOptions.innerHTML = `
+                        <div class="setup-section">
+                            <label>DIFFICULTY</label>
+                            <div class="option-group">
+                                <button class="option-btn selected" data-difficulty="easy">EASY</button>
+                                <button class="option-btn" data-difficulty="medium">MEDIUM</button>
+                                <button class="option-btn" data-difficulty="hard">HARD</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+
+            // Add click handlers
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    playSound('click');
+                    const group = this.parentElement;
+                    group.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+
+            showScreen('setupScreen');
+        }
+
+        function startSelectedGame() {
+            // Prevent rapid initialization (only when called from setup screen)
+            if (isInitializing) return;
+
+            playSound('click');
+            isInitializing = true;
+
+            // Get settings based on game
+            switch(currentGame) {
+                case 'spotlight':
+                    gameSettings = {
+                        gridSize: parseInt(document.querySelector('[data-grid].selected').dataset.grid),
+                        viewTime: parseInt(document.querySelector('[data-time].selected').dataset.time)
+                    };
+                    initSpotlight();
+                    break;
+                case 'clickorder':
+                    gameSettings = {
+                        difficulty: document.querySelector('[data-difficulty].selected').dataset.difficulty
+                    };
+                    initClickOrder();
+                    break;
+                case 'sequence':
+                    gameSettings = {
+                        difficulty: document.querySelector('[data-difficulty].selected').dataset.difficulty
+                    };
+                    initSequence();
+                    break;
+                case 'speedmatch':
+                    gameSettings = {
+                        timeLimit: parseInt(document.querySelector('[data-time].selected').dataset.time)
+                    };
+                    initSpeedMatch();
+                    break;
+                case 'pathfinder':
+                    gameSettings = {
+                        difficulty: document.querySelector('[data-difficulty].selected').dataset.difficulty
+                    };
+                    initPathFinder();
+                    break;
+            }
+
+            // Reset flag after initialization
+            setTimeout(() => {
+                isInitializing = false;
+            }, 1000);
+        }
+
+        function restartGame() {
+            // Direct restart without checking isInitializing flag
+            // Get settings based on game
+            switch(currentGame) {
+                case 'spotlight':
+                    initSpotlight();
+                    break;
+                case 'clickorder':
+                    initClickOrder();
+                    break;
+                case 'sequence':
+                    initSequence();
+                    break;
+                case 'speedmatch':
+                    initSpeedMatch();
+                    break;
+                case 'pathfinder':
+                    initPathFinder();
+                    break;
+            }
+        }
+
+        function resetCurrentGame() {
+            // Prevent rapid clicks
+            if (isInitializing) return;
+
+            playSound('click');
+            isInitializing = true;
+
+            // Clean up any active animations/timeouts
+            cleanupGame();
+
+            // Use restartGame instead of startSelectedGame to avoid double-check
+            restartGame();
+
+            // Re-enable after a short delay
+            setTimeout(() => {
+                isInitializing = false;
+            }, 1000);
+        }
+
+        // SPOTLIGHT GAME
+        let spotlightState = {};
+
+        function initSpotlight() {
+            showScreen('spotlightGame');
+            spotlightState = {
+                score: 0,
+                round: 1,
+                targetEmoji: '',
+                targetPosition: -1,
+                items: []
+            };
+            updateSpotlightUI();
+            startSpotlightRound();
+        }
+
+        function startSpotlightRound() {
+            const size = gameSettings.gridSize;
+            const totalItems = size * size;
+            const board = document.getElementById('spotlightBoard');
+            const itemSize = size >= 5 ? '70px' : '80px'; // Smaller items for 5x5 grid
+            board.style.gridTemplateColumns = `repeat(${size}, ${itemSize})`;
+            board.innerHTML = '';
+            // Clear any previous message
+            document.getElementById('spotlightMessage').textContent = '';
+
+            // Generate unique random items (no duplicates)
+            const shuffledEmojis = [...emojis].sort(() => Math.random() - 0.5);
+            spotlightState.items = shuffledEmojis.slice(0, totalItems);
+            // Shuffle again for random placement
+            spotlightState.items.sort(() => Math.random() - 0.5);
+
+            // Pick target
+            spotlightState.targetPosition = Math.floor(Math.random() * totalItems);
+            spotlightState.targetEmoji = spotlightState.items[spotlightState.targetPosition];
+
+            // Show items
+            document.getElementById('spotlightInstruction').textContent = 'Remember the positions...';
+            spotlightState.items.forEach((emoji, i) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.style.width = itemSize;
+                item.style.height = itemSize;
+                item.textContent = emoji;
+                item.dataset.index = i;
+                // Don't add onclick yet - wait until viewing time is over
+                board.appendChild(item);
+            });
+
+            // Hide after viewing time and enable clicking
+            setTimeout(() => {
+                document.querySelectorAll('#spotlightBoard .item').forEach((item, i) => {
+                    item.textContent = '';
+                    // Now enable clicking
+                    item.onclick = () => checkSpotlight(parseInt(item.dataset.index));
+                });
+                document.getElementById('spotlightInstruction').textContent =
+                    `Where was the ${spotlightState.targetEmoji}?`;
+            }, gameSettings.viewTime * 1000);
+        }
+
+        function checkSpotlight(position) {
+            // Prevent double click
+            const allItems = document.querySelectorAll('#spotlightBoard .item');
+            allItems.forEach(el => el.onclick = null);
+
+            playSound('flip');
+            const item = allItems[position];
+            item.textContent = spotlightState.items[position];
+
+            if (position === spotlightState.targetPosition) {
+                playSound('match');
+                item.classList.add('correct');
+                spotlightState.score += 10;
+                spotlightState.round++;
+                updateSpotlightUI();
+                document.getElementById('spotlightMessage').textContent = 'Correct!';
+                setTimeout(() => {
+                    document.getElementById('spotlightMessage').textContent = '';
+                    startSpotlightRound();
+                }, 2500);
+            } else {
+                playSound('nomatch');
+                item.classList.add('wrong');
+                document.getElementById('spotlightMessage').textContent = 'Wrong! Game Over';
+                allItems.forEach((el, i) => {
+                    if (i === spotlightState.targetPosition) {
+                        el.classList.add('correct');
+                        el.textContent = spotlightState.items[i];
+                    }
+                });
+            }
+        }
+
+        function updateSpotlightUI() {
+            document.getElementById('spotlightScore').textContent = spotlightState.score;
+            document.getElementById('spotlightRound').textContent = spotlightState.round;
+        }
+
+        // CLICK ORDER GAME
+        let clickorderState = {};
+
+        function initClickOrder() {
+            showScreen('clickorderGame');
+            // Difficulty settings: [gridSize, startingSequenceLength, maxSequenceLength]
+            const difficultyMap = {
+                easy: { gridSize: 6, startSeq: 3, maxSeq: 5 },
+                medium: { gridSize: 9, startSeq: 4, maxSeq: 7 },
+                hard: { gridSize: 12, startSeq: 5, maxSeq: 10 }
+            };
+            const difficulty = difficultyMap[gameSettings.difficulty];
+            clickorderState = {
+                level: 1,
+                score: 0,
+                sequence: [],
+                playerSequence: [],
+                itemCount: difficulty.gridSize,
+                startSequenceLength: difficulty.startSeq,
+                maxSequenceLength: difficulty.maxSeq,
+                items: []
+            };
+            updateClickOrderUI();
+            startClickOrderRound();
+        }
+
+        function startClickOrderRound() {
+            const board = document.getElementById('clickorderBoard');
+            // Clear any previous message
+            document.getElementById('clickorderMessage').textContent = '';
+
+            // Set grid columns based on item count
+            let columns;
+            if (clickorderState.itemCount === 6) columns = 3; // 3x2 grid
+            else if (clickorderState.itemCount === 9) columns = 3; // 3x3 grid
+            else if (clickorderState.itemCount === 12) columns = 4; // 4x3 grid
+            else columns = 4; // default
+
+            board.style.gridTemplateColumns = `repeat(${columns}, 80px)`;
+            board.innerHTML = '';
+
+            // Create grid with plain squares (no emojis)
+            clickorderState.items = [];
+            for (let i = 0; i < clickorderState.itemCount; i++) {
+                clickorderState.items.push(i); // Just store index
+            }
+
+            // Create grid
+            clickorderState.items.forEach((item, i) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'item';
+                itemEl.style.width = '80px';
+                itemEl.style.height = '80px';
+                // No text content - plain squares
+                itemEl.dataset.index = i;
+                board.appendChild(itemEl);
+            });
+
+            // Generate sequence
+            clickorderState.sequence = [];
+            clickorderState.playerSequence = [];
+            // Sequence length grows with level: starts at startSeq, +1 per level, capped at maxSeq
+            const sequenceLength = Math.min(
+                clickorderState.startSequenceLength + (clickorderState.level - 1),
+                clickorderState.maxSequenceLength
+            );
+            for (let i = 0; i < sequenceLength; i++) {
+                clickorderState.sequence.push(Math.floor(Math.random() * clickorderState.itemCount));
+            }
+
+            document.getElementById('clickorderInstruction').textContent = 'Watch the sequence...';
+
+            // Show sequence
+            let delay = 0;
+            clickorderState.sequence.forEach((idx, i) => {
+                const timeoutId = setTimeout(() => {
+                    const item = document.querySelector(`#clickorderBoard .item[data-index="${idx}"]`);
+                    item.classList.add('highlight');
+                    playSound('flip');
+                    const innerTimeoutId = setTimeout(() => item.classList.remove('highlight'), 400);
+                    activeTimeouts.push(innerTimeoutId);
+                }, delay);
+                activeTimeouts.push(timeoutId);
+                delay += 600;
+            });
+
+            // Enable clicking immediately after sequence finishes (no extra delay)
+            const enableTimeoutId = setTimeout(() => {
+                document.getElementById('clickorderInstruction').textContent = 'Click in the same order!';
+                document.querySelectorAll('#clickorderBoard .item').forEach(item => {
+                    item.onclick = () => clickOrderItem(parseInt(item.dataset.index));
+                });
+            }, delay);
+            activeTimeouts.push(enableTimeoutId);
+        }
+
+        function clickOrderItem(index) {
+            // Prevent double click on same item
+            const item = document.querySelector(`#clickorderBoard .item[data-index="${index}"]`);
+            if (item.classList.contains('highlight') || !item.onclick) return;
+
+            playSound('flip');
+            clickorderState.playerSequence.push(index);
+            item.classList.add('highlight');
+            setTimeout(() => item.classList.remove('highlight'), 300);
+
+            const step = clickorderState.playerSequence.length - 1;
+            if (clickorderState.playerSequence[step] !== clickorderState.sequence[step]) {
+                playSound('nomatch');
+                document.getElementById('clickorderMessage').textContent = 'Wrong! Game Over';
+                document.querySelectorAll('#clickorderBoard .item').forEach(el => el.onclick = null);
+            } else if (clickorderState.playerSequence.length === clickorderState.sequence.length) {
+                playSound('match');
+                clickorderState.score += clickorderState.level * 10;
+                clickorderState.level++;
+                updateClickOrderUI();
+                document.getElementById('clickorderMessage').textContent = 'Perfect!';
+                document.querySelectorAll('#clickorderBoard .item').forEach(el => el.onclick = null);
+                setTimeout(() => {
+                    document.getElementById('clickorderMessage').textContent = '';
+                    startClickOrderRound();
+                }, 2500);
+            }
+        }
+
+        function updateClickOrderUI() {
+            document.getElementById('clickorderLevel').textContent = clickorderState.level;
+            document.getElementById('clickorderScore').textContent = clickorderState.score;
+        }
+
+        // SEQUENCE GAME (Simon Says)
+        let sequenceState = {};
+
+        function initSequence() {
+            showScreen('sequenceGame');
+            const colors = ['🟥', '🟦', '🟩', '🟨'];
+            sequenceState = {
+                level: 1,
+                score: 0,
+                sequence: [],
+                playerSequence: [],
+                colors: colors
+            };
+            updateSequenceUI();
+            createSequenceBoard();
+            startSequenceRound();
+        }
+
+        function createSequenceBoard() {
+            const board = document.getElementById('sequenceBoard');
+            board.style.gridTemplateColumns = `repeat(2, 120px)`;
+            board.innerHTML = '';
+
+            sequenceState.colors.forEach((color, i) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.style.width = '120px';
+                item.style.height = '120px';
+                item.textContent = color;
+                item.dataset.index = i;
+                board.appendChild(item);
+            });
+        }
+
+        function startSequenceRound() {
+            sequenceState.sequence.push(Math.floor(Math.random() * 4));
+            sequenceState.playerSequence = [];
+            // Clear any previous message
+            document.getElementById('sequenceMessage').textContent = '';
+
+            document.getElementById('sequenceInstruction').textContent = 'Watch the pattern...';
+
+            let delay = 0;
+            sequenceState.sequence.forEach((idx) => {
+                const timeoutId = setTimeout(() => {
+                    const item = document.querySelector(`#sequenceBoard .item[data-index="${idx}"]`);
+                    item.classList.add('highlight');
+                    playSound('flip');
+                    const innerTimeoutId = setTimeout(() => item.classList.remove('highlight'), 400);
+                    activeTimeouts.push(innerTimeoutId);
+                }, delay);
+                activeTimeouts.push(timeoutId);
+                delay += 600;
+            });
+
+            // Enable clicking immediately after sequence finishes (no extra delay)
+            const enableTimeoutId = setTimeout(() => {
+                document.getElementById('sequenceInstruction').textContent = 'Repeat the pattern!';
+                document.querySelectorAll('#sequenceBoard .item').forEach(item => {
+                    item.onclick = () => sequenceItemClick(parseInt(item.dataset.index));
+                });
+            }, delay);
+            activeTimeouts.push(enableTimeoutId);
+        }
+
+        function sequenceItemClick(index) {
+            // Prevent double click
+            const item = document.querySelector(`#sequenceBoard .item[data-index="${index}"]`);
+            if (item.classList.contains('highlight') || !item.onclick) return;
+
+            playSound('flip');
+            sequenceState.playerSequence.push(index);
+            item.classList.add('highlight');
+            setTimeout(() => item.classList.remove('highlight'), 300);
+
+            const step = sequenceState.playerSequence.length - 1;
+            if (sequenceState.playerSequence[step] !== sequenceState.sequence[step]) {
+                playSound('nomatch');
+                document.getElementById('sequenceMessage').textContent = 'Wrong! Game Over';
+                document.querySelectorAll('#sequenceBoard .item').forEach(el => el.onclick = null);
+            } else if (sequenceState.playerSequence.length === sequenceState.sequence.length) {
+                playSound('match');
+                sequenceState.score += sequenceState.level * 10;
+                sequenceState.level++;
+                updateSequenceUI();
+                document.getElementById('sequenceMessage').textContent = 'Perfect!';
+                document.querySelectorAll('#sequenceBoard .item').forEach(el => el.onclick = null);
+                setTimeout(() => {
+                    document.getElementById('sequenceMessage').textContent = '';
+                    startSequenceRound();
+                }, 2500);
+            }
+        }
+
+        function updateSequenceUI() {
+            document.getElementById('sequenceLevel').textContent = sequenceState.level;
+            document.getElementById('sequenceScore').textContent = sequenceState.score;
+        }
+
+        // SPEED MATCH GAME
+        let speedmatchState = {};
+
+        function initSpeedMatch() {
+            showScreen('speedmatchGame');
+            // Clear any previous message
+            document.getElementById('speedmatchMessage').textContent = '';
+
+            const symbols = emojis.slice(0, 10);
+            speedmatchState = {
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                timeLeft: gameSettings.timeLimit,
+                timerInterval: null,
+                canFlip: true
+            };
+
+            // Create card pairs
+            symbols.forEach(symbol => {
+                speedmatchState.cards.push({ symbol, id: Math.random() });
+                speedmatchState.cards.push({ symbol, id: Math.random() });
+            });
+            speedmatchState.cards.sort(() => Math.random() - 0.5);
+
+            updateSpeedMatchUI();
+            createSpeedMatchBoard();
+            startSpeedMatchTimer();
+        }
+
+        function createSpeedMatchBoard() {
+            const board = document.getElementById('speedmatchBoard');
+            board.style.gridTemplateColumns = `repeat(5, 80px)`;
+            board.innerHTML = '';
+
+            speedmatchState.cards.forEach((card, i) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.style.width = '80px';
+                item.style.height = '80px';
+                item.dataset.index = i;
+                item.onclick = () => flipSpeedMatchCard(i);
+                board.appendChild(item);
+            });
+        }
+
+        function flipSpeedMatchCard(index) {
+            if (!speedmatchState.canFlip) return;
+            const item = document.querySelectorAll('#speedmatchBoard .item')[index];
+            if (item.classList.contains('correct') || item.classList.contains('highlight')) return;
+
+            playSound('flip');
+            item.classList.add('highlight');
+            item.textContent = speedmatchState.cards[index].symbol;
+            speedmatchState.flippedCards.push(index);
+
+            if (speedmatchState.flippedCards.length === 2) {
+                speedmatchState.canFlip = false;
+                setTimeout(checkSpeedMatch, 800);
+            }
+        }
+
+        function checkSpeedMatch() {
+            const [idx1, idx2] = speedmatchState.flippedCards;
+            const item1 = document.querySelectorAll('#speedmatchBoard .item')[idx1];
+            const item2 = document.querySelectorAll('#speedmatchBoard .item')[idx2];
+
+            if (speedmatchState.cards[idx1].symbol === speedmatchState.cards[idx2].symbol) {
+                playSound('match');
+                item1.classList.add('correct');
+                item2.classList.add('correct');
+                item1.classList.remove('highlight');
+                item2.classList.remove('highlight');
+                speedmatchState.matchedPairs++;
+                updateSpeedMatchUI();
+
+                if (speedmatchState.matchedPairs === 10) {
+                    clearInterval(speedmatchState.timerInterval);
+                    playSound('win');
+                    document.getElementById('speedmatchMessage').textContent =
+                        `You won with ${speedmatchState.timeLeft}s left!`;
+                }
+            } else {
+                playSound('nomatch');
+                item1.classList.remove('highlight');
+                item2.classList.remove('highlight');
+                item1.textContent = '';
+                item2.textContent = '';
+            }
+
+            speedmatchState.flippedCards = [];
+            speedmatchState.canFlip = true;
+        }
+
+        function startSpeedMatchTimer() {
+            speedmatchState.timerInterval = setInterval(() => {
+                speedmatchState.timeLeft--;
+                updateSpeedMatchUI();
+                if (speedmatchState.timeLeft <= 0) {
+                    clearInterval(speedmatchState.timerInterval);
+                    playSound('nomatch');
+                    document.getElementById('speedmatchMessage').textContent = 'Time up!';
+                    document.querySelectorAll('#speedmatchBoard .item').forEach(el => el.onclick = null);
+                }
+            }, 1000);
+        }
+
+        function updateSpeedMatchUI() {
+            document.getElementById('speedmatchTimer').textContent = speedmatchState.timeLeft;
+            document.getElementById('speedmatchMatches').textContent = speedmatchState.matchedPairs;
+        }
+
+        // PATH FINDER GAME
+        let pathfinderState = {};
+
+        function initPathFinder() {
+            showScreen('pathfinderGame');
+            // Difficulty affects grid rows: easy=4x4, medium=4x5, hard=4x6 (always 4 columns)
+            const difficultyMap = {
+                easy: { cols: 4, rows: 4, basePathLength: 4 },
+                medium: { cols: 4, rows: 5, basePathLength: 5 },
+                hard: { cols: 4, rows: 6, basePathLength: 6 }
+            };
+            const difficulty = difficultyMap[gameSettings.difficulty];
+            pathfinderState = {
+                level: 1,
+                lives: 3,
+                path: [],
+                playerPath: [],
+                pathLength: difficulty.basePathLength,
+                cols: difficulty.cols,
+                rows: difficulty.rows,
+                princessPos: null,
+                castlePos: null
+            };
+            updatePathFinderUI();
+            startPathFinderRound();
+        }
+
+        function startPathFinderRound() {
+            const board = document.getElementById('pathfinderBoard');
+            const cols = pathfinderState.cols;
+            const rows = pathfinderState.rows;
+            const totalSquares = cols * rows;
+
+            board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            board.setAttribute('data-grid-rows', rows); // Add data attribute for CSS targeting
+            board.innerHTML = '';
+            // Clear any previous message
+            document.getElementById('pathfinderMessage').textContent = '';
+
+            // Princess always at bottom-left
+            const princessPos = (rows - 1) * cols;
+            pathfinderState.princessPos = princessPos;
+
+            // Randomly place castle (not at princess position, not adjacent to princess)
+            let castlePos;
+            do {
+                castlePos = Math.floor(Math.random() * totalSquares);
+                // Make sure castle is not at princess position and has some distance
+                const princessRow = Math.floor(princessPos / cols);
+                const princessCol = princessPos % cols;
+                const castleRow = Math.floor(castlePos / cols);
+                const castleCol = castlePos % cols;
+                const distance = Math.abs(castleRow - princessRow) + Math.abs(castleCol - princessCol);
+                // Ensure castle is at least 3 steps away for a meaningful path
+            } while (castlePos === princessPos || Math.abs(castlePos - princessPos) < 3);
+            pathfinderState.castlePos = castlePos;
+
+            // Create grid
+            for (let i = 0; i < totalSquares; i++) {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.dataset.index = i;
+
+                // Show princess at start and castle at end
+                if (i === princessPos) {
+                    item.textContent = '👸';
+                } else if (i === castlePos) {
+                    item.textContent = '🏰';
+                }
+
+                board.appendChild(item);
+            }
+
+            // Generate path from princess to castle
+            pathfinderState.path = generatePathToTarget(princessPos, castlePos, cols, rows);
+            pathfinderState.playerPath = [];
+
+            document.getElementById('pathfinderInstruction').textContent = 'Watch the safe path...';
+
+            // Show path
+            let delay = 0;
+            pathfinderState.path.forEach((idx, i) => {
+                const timeoutId = setTimeout(() => {
+                    const item = document.querySelector(`#pathfinderBoard .item[data-index="${idx}"]`);
+                    const originalContent = item.textContent; // Save princess/castle emoji
+                    item.textContent = i + 1;
+                    item.classList.add('highlight');
+                    playSound('flip');
+                    const innerTimeoutId = setTimeout(() => {
+                        item.classList.remove('highlight');
+                        // Restore princess/castle emoji if it was there
+                        if (originalContent === '👸' || originalContent === '🏰') {
+                            item.textContent = originalContent;
+                        } else {
+                            item.textContent = '';
+                        }
+                    }, 400);
+                    activeTimeouts.push(innerTimeoutId);
+                }, delay);
+                activeTimeouts.push(timeoutId);
+                delay += 600;
+            });
+
+            // Enable clicking immediately after path finishes (no extra delay)
+            const enableTimeoutId = setTimeout(() => {
+                document.getElementById('pathfinderInstruction').textContent = 'Click the safe path in order!';
+                document.querySelectorAll('#pathfinderBoard .item').forEach(item => {
+                    item.onclick = () => clickPathItem(parseInt(item.dataset.index));
+                });
+            }, delay);
+            activeTimeouts.push(enableTimeoutId);
+        }
+
+        function generatePathToTarget(startPos, endPos, cols, rows) {
+            const path = [];
+            let current = startPos;
+            path.push(current);
+
+            const targetLength = pathfinderState.pathLength + pathfinderState.level;
+            const maxAttempts = 100; // Prevent infinite loops
+            let attempts = 0;
+
+            // Keep moving towards target until we reach it or hit max length
+            while (current !== endPos && path.length < targetLength && attempts < maxAttempts) {
+                attempts++;
+                const neighbors = getNeighbors(current, cols, rows);
+                const availableNeighbors = neighbors.filter(n => !path.includes(n));
+
+                if (availableNeighbors.length === 0) break;
+
+                // Calculate direction priority towards the castle
+                const currentRow = Math.floor(current / cols);
+                const currentCol = current % cols;
+                const endRow = Math.floor(endPos / cols);
+                const endCol = endPos % cols;
+
+                // Prioritize neighbors that move closer to destination
+                const priorityNeighbors = availableNeighbors.filter(n => {
+                    const nRow = Math.floor(n / cols);
+                    const nCol = n % cols;
+                    const currentDist = Math.abs(currentRow - endRow) + Math.abs(currentCol - endCol);
+                    const newDist = Math.abs(nRow - endRow) + Math.abs(nCol - endCol);
+                    return newDist < currentDist; // Moves closer to castle
+                });
+
+                // 70% chance to move towards castle, 30% random for variety
+                let nextSquare;
+                if (priorityNeighbors.length > 0 && Math.random() < 0.7) {
+                    nextSquare = priorityNeighbors[Math.floor(Math.random() * priorityNeighbors.length)];
+                } else {
+                    nextSquare = availableNeighbors[Math.floor(Math.random() * availableNeighbors.length)];
+                }
+
+                current = nextSquare;
+                path.push(current);
+            }
+
+            // If we haven't reached the castle yet, try to connect directly
+            if (current !== endPos && !path.includes(endPos)) {
+                // Check if castle is adjacent to current position
+                const neighbors = getNeighbors(current, cols, rows);
+                if (neighbors.includes(endPos)) {
+                    path.push(endPos);
+                } else {
+                    // Force path to castle by finding shortest remaining path
+                    let tempCurrent = current;
+                    const tempPath = [...path];
+                    while (tempCurrent !== endPos && tempPath.length < targetLength + 5) {
+                        const neighbors = getNeighbors(tempCurrent, cols, rows);
+                        const availableNeighbors = neighbors.filter(n => !tempPath.includes(n));
+
+                        if (availableNeighbors.length === 0) break;
+
+                        // Always move closer
+                        const tempRow = Math.floor(tempCurrent / cols);
+                        const tempCol = tempCurrent % cols;
+                        const endRow = Math.floor(endPos / cols);
+                        const endCol = endPos % cols;
+
+                        const closerNeighbors = availableNeighbors.filter(n => {
+                            const nRow = Math.floor(n / cols);
+                            const nCol = n % cols;
+                            const currentDist = Math.abs(tempRow - endRow) + Math.abs(tempCol - endCol);
+                            const newDist = Math.abs(nRow - endRow) + Math.abs(nCol - endCol);
+                            return newDist < currentDist;
+                        });
+
+                        if (closerNeighbors.length > 0) {
+                            tempCurrent = closerNeighbors[0];
+                        } else if (availableNeighbors.length > 0) {
+                            tempCurrent = availableNeighbors[0];
+                        } else {
+                            break;
+                        }
+
+                        tempPath.push(tempCurrent);
+                        path.push(tempCurrent);
+
+                        if (tempCurrent === endPos) break;
+                    }
+                }
+            }
+
+            return path;
+        }
+
+        function getNeighbors(index, cols, rows) {
+            const neighbors = [];
+            const row = Math.floor(index / cols);
+            const col = index % cols;
+
+            if (row > 0) neighbors.push(index - cols); // up
+            if (row < rows - 1) neighbors.push(index + cols); // down
+            if (col > 0) neighbors.push(index - 1); // left
+            if (col < cols - 1) neighbors.push(index + 1); // right
+
+            return neighbors;
+        }
+
+        function clickPathItem(index) {
+            // Prevent double click - check if already clicked
+            const item = document.querySelector(`#pathfinderBoard .item[data-index="${index}"]`);
+            if (item.classList.contains('correct') || item.classList.contains('wrong') || !item.onclick) return;
+
+            // Don't allow clicking on princess or castle directly unless they're part of path
+            const itemContent = item.textContent;
+            if ((itemContent === '👸' || itemContent === '🏰') && index !== pathfinderState.path[pathfinderState.playerPath.length]) {
+                return;
+            }
+
+            playSound('flip');
+            pathfinderState.playerPath.push(index);
+
+            // Show number on clicked square (but preserve emoji on path)
+            const originalContent = item.textContent;
+            item.textContent = pathfinderState.playerPath.length;
+            item.classList.add('correct');
+
+            const step = pathfinderState.playerPath.length - 1;
+            if (pathfinderState.playerPath[step] !== pathfinderState.path[step]) {
+                playSound('nomatch');
+                pathfinderState.lives--;
+                updatePathFinderUI();
+
+                // Disable all clicks immediately
+                document.querySelectorAll('#pathfinderBoard .item').forEach(el => el.onclick = null);
+
+                if (pathfinderState.lives <= 0) {
+                    document.getElementById('pathfinderMessage').textContent = 'Game Over!';
+                    document.getElementById('pathfinderInstruction').textContent = '';
+                } else {
+                    document.getElementById('pathfinderMessage').textContent = 'Wrong! Try again';
+                    const timeoutId = setTimeout(() => {
+                        document.getElementById('pathfinderMessage').textContent = '';
+                        startPathFinderRound();
+                    }, 1500);
+                    activeTimeouts.push(timeoutId);
+                }
+            } else if (pathfinderState.playerPath.length === pathfinderState.path.length) {
+                playSound('match');
+                pathfinderState.level++;
+                updatePathFinderUI();
+                document.getElementById('pathfinderMessage').textContent = 'Perfect! Princess saved!';
+                document.querySelectorAll('#pathfinderBoard .item').forEach(el => el.onclick = null);
+                const timeoutId = setTimeout(() => {
+                    document.getElementById('pathfinderMessage').textContent = '';
+                    startPathFinderRound();
+                }, 2500);
+                activeTimeouts.push(timeoutId);
+            }
+        }
+
+        function updatePathFinderUI() {
+            document.getElementById('pathfinderLevel').textContent = pathfinderState.level;
+            document.getElementById('pathfinderLives').textContent = pathfinderState.lives;
+        }
+    </script>
+</body>
+</html>
