@@ -192,6 +192,35 @@
             font-size: 2.5rem;
         }
 
+        /* Covered Number default desktop styles */
+        #coverednumberBoard {
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        #coverednumberBoard .item {
+            width: 120px;
+            height: 120px;
+            font-size: 3rem;
+            font-weight: 700;
+        }
+
+        #coverednumberBoard .item.covered {
+            background-color: #000000;
+            color: #000000;
+            cursor: pointer;
+        }
+
+        #coverednumberBoard .item.revealed {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        #coverednumberBoard .item:not(.covered):not(.revealed) {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
         .item {
             background-color: #000000;
             border: 1px solid #000000;
@@ -492,6 +521,18 @@
                 font-size: 2rem;
             }
 
+            /* Covered Number - mobile portrait */
+            #coverednumberBoard {
+                gap: 8px;
+                max-width: 100%;
+            }
+
+            #coverednumberBoard .item {
+                width: 100px !important;
+                height: 100px !important;
+                font-size: 2.5rem !important;
+            }
+
             button {
                 padding: 10px 25px;
                 font-size: 14px;
@@ -577,6 +618,17 @@
                 font-size: 1.5rem;
             }
 
+            /* Covered Number - landscape */
+            #coverednumberBoard {
+                gap: 6px;
+            }
+
+            #coverednumberBoard .item {
+                width: 80px !important;
+                height: 80px !important;
+                font-size: 2rem !important;
+            }
+
             button {
                 padding: 6px 15px;
                 font-size: 12px;
@@ -626,6 +678,17 @@
             #pathfinderBoard .item {
                 aspect-ratio: 1;
                 font-size: 1.8rem;
+            }
+
+            /* Covered Number - small phones */
+            #coverednumberBoard {
+                gap: 7px;
+            }
+
+            #coverednumberBoard .item {
+                width: 95px !important;
+                height: 95px !important;
+                font-size: 2.3rem !important;
             }
         }
 
@@ -705,6 +768,10 @@
                 <h3>PATH FINDER</h3>
                 <p>Find the safe path from princess to castle</p>
             </div>
+            <div class="game-card" onclick="selectGame('coverednumber')">
+                <h3>COVERED NUMBER</h3>
+                <p>Remember the numbers and reveal them in order</p>
+            </div>
         </div>
     </div>
 
@@ -776,6 +843,19 @@
         <div class="instruction" id="pathfinderInstruction">Watch the path...</div>
         <div class="game-board" id="pathfinderBoard"></div>
         <div class="message" id="pathfinderMessage"></div>
+        <button onclick="resetCurrentGame()">NEW GAME</button>
+    </div>
+
+    <!-- Covered Number Game -->
+    <div class="screen" id="coverednumberGame">
+        <h2>COVERED NUMBER</h2>
+        <div class="game-info">
+            <div>Level: <span id="coverednumberLevel">1</span></div>
+            <div>Score: <span id="coverednumberScore">0</span></div>
+        </div>
+        <div class="instruction" id="coverednumberInstruction">Get ready...</div>
+        <div class="game-board" id="coverednumberBoard"></div>
+        <div class="message" id="coverednumberMessage"></div>
         <button onclick="resetCurrentGame()">NEW GAME</button>
     </div>
 
@@ -895,13 +975,14 @@
             sequenceState = {};
             speedmatchState = {};
             pathfinderState = {};
+            coverednumberState = {};
         }
 
         function goBack() {
             playSound('click');
             cleanupGame();
 
-            if (['spotlightGame', 'clickorderGame', 'sequenceGame', 'speedmatchGame', 'pathfinderGame'].includes(document.querySelector('.screen.active').id)) {
+            if (['spotlightGame', 'clickorderGame', 'sequenceGame', 'speedmatchGame', 'pathfinderGame', 'coverednumberGame'].includes(document.querySelector('.screen.active').id)) {
                 showScreen('setupScreen');
             } else if (document.querySelector('.screen.active').id === 'setupScreen') {
                 showScreen('gameSelection');
@@ -994,6 +1075,19 @@
                         </div>
                     `;
                     break;
+                case 'coverednumber':
+                    setupTitle.textContent = 'COVERED NUMBER SETUP';
+                    setupOptions.innerHTML = `
+                        <div class="setup-section">
+                            <label>DIFFICULTY</label>
+                            <div class="option-group">
+                                <button class="option-btn selected" data-difficulty="easy">EASY (1-3)</button>
+                                <button class="option-btn" data-difficulty="medium">MEDIUM (1-6)</button>
+                                <button class="option-btn" data-difficulty="hard">HARD (1-9)</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
             }
 
             // Add click handlers
@@ -1049,6 +1143,12 @@
                     };
                     initPathFinder();
                     break;
+                case 'coverednumber':
+                    gameSettings = {
+                        difficulty: document.querySelector('[data-difficulty].selected').dataset.difficulty
+                    };
+                    initCoveredNumber();
+                    break;
             }
 
             // Reset flag after initialization
@@ -1075,6 +1175,9 @@
                     break;
                 case 'pathfinder':
                     initPathFinder();
+                    break;
+                case 'coverednumber':
+                    initCoveredNumber();
                     break;
             }
         }
@@ -1255,7 +1358,7 @@
                 board.appendChild(itemEl);
             });
 
-            // Generate sequence
+            // Generate sequence (no repeating squares)
             clickorderState.sequence = [];
             clickorderState.playerSequence = [];
             // Sequence length grows with level: starts at startSeq, +1 per level, capped at maxSeq
@@ -1263,9 +1366,21 @@
                 clickorderState.startSequenceLength + (clickorderState.level - 1),
                 clickorderState.maxSequenceLength
             );
-            for (let i = 0; i < sequenceLength; i++) {
-                clickorderState.sequence.push(Math.floor(Math.random() * clickorderState.itemCount));
+
+            // Create array of all available indices and shuffle
+            const availableIndices = [];
+            for (let i = 0; i < clickorderState.itemCount; i++) {
+                availableIndices.push(i);
             }
+
+            // Shuffle and take first N items (no repeats)
+            for (let i = availableIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [availableIndices[i], availableIndices[j]] = [availableIndices[j], availableIndices[i]];
+            }
+
+            // Take only the needed sequence length
+            clickorderState.sequence = availableIndices.slice(0, sequenceLength);
 
             document.getElementById('clickorderInstruction').textContent = 'Watch the sequence...';
 
@@ -1813,6 +1928,143 @@
         function updatePathFinderUI() {
             document.getElementById('pathfinderLevel').textContent = pathfinderState.level;
             document.getElementById('pathfinderLives').textContent = pathfinderState.lives;
+        }
+
+        // COVERED NUMBER GAME
+        let coverednumberState = {};
+
+        function initCoveredNumber() {
+            showScreen('coverednumberGame');
+            const difficultyMap = {
+                easy: { maxNumber: 3, gridSize: 3 },
+                medium: { maxNumber: 6, gridSize: 3 },
+                hard: { maxNumber: 9, gridSize: 3 }
+            };
+            const difficulty = difficultyMap[gameSettings.difficulty];
+            coverednumberState = {
+                level: 1,
+                score: 0,
+                maxNumber: difficulty.maxNumber,
+                gridSize: difficulty.gridSize,
+                positions: [],
+                currentNumber: 1,
+                isRevealed: false
+            };
+            updateCoveredNumberUI();
+            startCoveredNumberRound();
+        }
+
+        function startCoveredNumberRound() {
+            const board = document.getElementById('coverednumberBoard');
+            const size = coverednumberState.gridSize;
+            const totalSquares = size * size;
+            board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            board.innerHTML = '';
+            document.getElementById('coverednumberMessage').textContent = '';
+
+            // Generate random positions for numbers
+            const allPositions = [];
+            for (let i = 0; i < totalSquares; i++) {
+                allPositions.push(i);
+            }
+
+            // Shuffle and select positions for numbers
+            for (let i = allPositions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allPositions[i], allPositions[j]] = [allPositions[j], allPositions[i]];
+            }
+
+            coverednumberState.positions = allPositions.slice(0, coverednumberState.maxNumber);
+            coverednumberState.currentNumber = 1;
+            coverednumberState.isRevealed = false;
+
+            // Create grid with numbers visible
+            for (let i = 0; i < totalSquares; i++) {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.dataset.index = i;
+
+                const positionIndex = coverednumberState.positions.indexOf(i);
+                if (positionIndex !== -1) {
+                    item.textContent = positionIndex + 1;
+                    item.dataset.number = positionIndex + 1;
+                }
+
+                board.appendChild(item);
+            }
+
+            document.getElementById('coverednumberInstruction').textContent = 'Memorize the numbers...';
+
+            // Cover numbers after 2 seconds
+            const coverTimeoutId = setTimeout(() => {
+                document.querySelectorAll('#coverednumberBoard .item').forEach(item => {
+                    if (item.dataset.number) {
+                        // Keep the text but add 'covered' class to hide it visually
+                        item.classList.add('covered');
+                    }
+                });
+                coverednumberState.isRevealed = true;
+                document.getElementById('coverednumberInstruction').textContent = 'Click in order 1, 2, 3...';
+
+                // Enable clicking
+                document.querySelectorAll('#coverednumberBoard .item').forEach(item => {
+                    item.onclick = () => clickCoveredNumber(parseInt(item.dataset.index));
+                });
+            }, 2000);
+            activeTimeouts.push(coverTimeoutId);
+        }
+
+        function clickCoveredNumber(index) {
+            if (!coverednumberState.isRevealed) return;
+
+            const item = document.querySelector(`#coverednumberBoard .item[data-index="${index}"]`);
+            if (!item.dataset.number || item.classList.contains('revealed')) return;
+
+            playSound('flip');
+            const clickedNumber = parseInt(item.dataset.number);
+
+            // Reveal the number by removing cover
+            item.classList.remove('covered');
+            item.classList.add('revealed');
+
+            if (clickedNumber === coverednumberState.currentNumber) {
+                // Correct
+                playSound('match');
+                item.classList.add('correct');
+                coverednumberState.currentNumber++;
+
+                // Check if all numbers revealed
+                if (coverednumberState.currentNumber > coverednumberState.maxNumber) {
+                    document.querySelectorAll('#coverednumberBoard .item').forEach(el => el.onclick = null);
+                    coverednumberState.score += coverednumberState.level * 10;
+                    coverednumberState.level++;
+                    updateCoveredNumberUI();
+                    document.getElementById('coverednumberMessage').textContent = 'Perfect!';
+                    const successTimeoutId = setTimeout(() => {
+                        document.getElementById('coverednumberMessage').textContent = '';
+                        startCoveredNumberRound();
+                    }, 1500);
+                    activeTimeouts.push(successTimeoutId);
+                }
+            } else {
+                // Wrong
+                playSound('nomatch');
+                item.classList.add('wrong');
+                document.querySelectorAll('#coverednumberBoard .item').forEach(el => el.onclick = null);
+                document.getElementById('coverednumberMessage').textContent = 'Wrong! Game Over';
+
+                // Reveal all numbers by removing cover
+                document.querySelectorAll('#coverednumberBoard .item').forEach(el => {
+                    if (el.dataset.number && el.classList.contains('covered')) {
+                        el.classList.remove('covered');
+                    }
+                });
+            }
+        }
+
+        function updateCoveredNumberUI() {
+            document.getElementById('coverednumberLevel').textContent = coverednumberState.level;
+            document.getElementById('coverednumberScore').textContent = coverednumberState.score;
         }
     </script>
 </body>
